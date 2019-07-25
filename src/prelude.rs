@@ -11,29 +11,11 @@
 //! The prelude may grow over time as additional items see ubiquitous use.
 
 pub use super::{
-    nats_client::{
-        NatsClientOptions,
-        NatsClient,
-        NatsClientState,
-        UriVec,
-    },
     error::RatsioError,
-    ops::{
-        Connect,
-        Message,
-        Op,
-        Publish,
-        Subscribe,
-        UnSubscribe,
-    },
+    nats_client::{NatsClient, NatsClientOptions, NatsClientState, UriVec},
+    ops::{Connect, Message, Op, Publish, Subscribe, UnSubscribe},
     stan_client::{
-        StanClient,
-        StanOptions,
-        StanMessage,
-        StanSubscribe,
-        StartPosition,
-        SubscriptionHandler,
-        AsyncHandler,
-        SyncHandler,
+        AsyncHandler, StanClient, StanMessage, StanOptions, StanSubscribe, StartPosition,
+        SubscriptionHandler, SyncHandler,
     },
 };

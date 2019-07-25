@@ -1,24 +1,17 @@
 use crate::error::RatsioError;
 use crate::net::*;
-use crate::ops::{Connect, Message, Op,  ServerInfo, Subscribe, };
+use crate::ops::{Connect, Message, Op, ServerInfo, Subscribe};
 use futures::{
-    Future,
     prelude::*,
     stream,
-    Stream,
-    sync::{
-        mpsc::{self, UnboundedSender},
-    },
+    sync::mpsc::{self, UnboundedSender},
+    Future, Stream,
 };
 use parking_lot::RwLock;
-use std::{
-    collections::HashMap,
-    sync::Arc,
-};
+use std::{collections::HashMap, sync::Arc};
 
 type NatsSink = stream::SplitSink<NatsConnSinkStream>;
 type NatsStream = stream::SplitStream<NatsConnSinkStream>;
-
 
 mod client;
 
@@ -37,7 +30,7 @@ impl NatsClientSender {
         NatsClientSender { tx }
     }
     /// Sends an OP to the server
-    pub fn send(&self, op: Op) -> impl Future<Item=(), Error=RatsioError> {
+    pub fn send(&self, op: Op) -> impl Future<Item = (), Error = RatsioError> {
         //let _verbose = self.verbose.clone();
         self.tx
             .unbounded_send(op)
@@ -95,13 +88,13 @@ impl From<Vec<String>> for UriVec {
 
 impl From<String> for UriVec {
     fn from(x: String) -> Self {
-        UriVec(vec!(x))
+        UriVec(vec![x])
     }
 }
 
 impl From<&str> for UriVec {
     fn from(x: &str) -> Self {
-        UriVec(vec!(x.to_owned()))
+        UriVec(vec![x.to_owned()])
     }
 }
 
@@ -141,8 +134,6 @@ pub struct NatsClientOptions {
     /// Time between connection retries
     pub reconnect_timeout: u64,
 }
-
-
 
 impl Default for NatsClientOptions {
     fn default() -> Self {
@@ -190,7 +181,7 @@ pub struct NatsClient {
     /// Server info
     server_info: Arc<RwLock<Option<ServerInfo>>>,
     /// Stream of the messages that are not caught for subscriptions (only system messages like PING/PONG should be here)
-    unsub_receiver: Box<dyn Stream<Item=Op, Error=RatsioError> + Send + Sync>,
+    unsub_receiver: Box<dyn Stream<Item = Op, Error = RatsioError> + Send + Sync>,
     /// Sink part to send commands
     pub sender: Arc<RwLock<NatsClientSender>>,
     /// Subscription multiplexer
@@ -201,7 +192,6 @@ pub struct NatsClient {
 
     state: Arc<RwLock<NatsClientState>>,
     reconnect_handlers: Arc<RwLock<HandlerMap>>,
-
 }
 
 impl ::std::fmt::Debug for NatsClient {
@@ -220,6 +210,8 @@ impl Stream for NatsClient {
     type Item = Op;
 
     fn poll(&mut self) -> Result<Async<Option<Self::Item>>, Self::Error> {
-        self.unsub_receiver.poll().map_err(|_| RatsioError::InnerBrokenChain)
+        self.unsub_receiver
+            .poll()
+            .map_err(|_| RatsioError::InnerBrokenChain)
     }
 }

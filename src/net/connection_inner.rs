@@ -1,27 +1,31 @@
 use crate::codec::OpCodec;
+use crate::error::*;
+use crate::ops::Op;
 use futures::prelude::*;
 use native_tls::TlsConnector as NativeTlsConnector;
 use std::net::SocketAddr;
+use tokio::codec::{Decoder, Framed};
 use tokio_tcp::TcpStream;
 use tokio_tls::{TlsConnector, TlsStream};
-use crate::error::*;
-use crate::ops::Op;
-use tokio::codec::{Decoder, Framed};
 
 #[derive(Debug)]
 pub(crate) enum NatsConnectionInner {
     Tcp(Box<Framed<TcpStream, OpCodec>>),
 
-    Tls(Box<Framed<TlsStream<TcpStream>,OpCodec>>),
+    Tls(Box<Framed<TlsStream<TcpStream>, OpCodec>>),
 }
 
-
 impl NatsConnectionInner {
-    pub(crate) fn connect_tcp(addr: &SocketAddr) -> impl Future<Item=TcpStream, Error=RatsioError> {
+    pub(crate) fn connect_tcp(
+        addr: &SocketAddr,
+    ) -> impl Future<Item = TcpStream, Error = RatsioError> {
         TcpStream::connect(addr).from_err()
     }
 
-    pub(crate) fn upgrade_tcp_to_tls(host: &str, socket: TcpStream) -> impl Future<Item=TlsStream<TcpStream>, Error=RatsioError>{
+    pub(crate) fn upgrade_tcp_to_tls(
+        host: &str,
+        socket: TcpStream,
+    ) -> impl Future<Item = TlsStream<TcpStream>, Error = RatsioError> {
         let tls_connector = NativeTlsConnector::builder().build().unwrap();
         let tls_stream: TlsConnector = tls_connector.into();
         tls_stream.connect(&host, socket).from_err()

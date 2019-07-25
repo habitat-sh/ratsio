@@ -1,15 +1,14 @@
 use crate::error::RatsioError;
-use crate::protocol::parser::operation;
 use crate::ops::*;
+use crate::protocol::parser::operation;
 
 use tokio::codec::{Decoder, Encoder};
 
-use bytes::{BytesMut, BufMut};
-use nom::{Err as NomErr};
+use bytes::{BufMut, BytesMut};
+use nom::Err as NomErr;
 
 #[derive(Debug, Default, Clone, Eq, PartialEq, Ord, PartialOrd)]
-pub struct OpCodec {
-}
+pub struct OpCodec {}
 
 impl Decoder for OpCodec {
     type Item = Op;
@@ -17,7 +16,7 @@ impl Decoder for OpCodec {
 
     fn decode(&mut self, buf: &mut BytesMut) -> Result<Option<Self::Item>, Self::Error> {
         let len = buf.len();
-        if len == 0{
+        if len == 0 {
             return Ok(None);
         }
         match operation(&buf[..]) {
@@ -26,7 +25,7 @@ impl Decoder for OpCodec {
                 debug!(target: "ratsio", " Op::Item => {:?}", item);
                 buf.split_to(len - remaining.len());
                 Ok(Some(item))
-            },
+            }
             Err(NomErr::Error(err)) => {
                 //scan for \r\n and recover there.
                 let txt = String::from(&(*String::from_utf8_lossy(&buf[..])));
@@ -34,11 +33,11 @@ impl Decoder for OpCodec {
                 if let Some(offset) = buf[..].windows(2).position(|w| w == b"\r\n") {
                     buf.split_to(offset);
                     self.decode(buf)
-                }else{
+                } else {
                     buf.split_to(len);
                     Ok(None)
                 }
-            },
+            }
             Err(NomErr::Failure(err)) => {
                 //scan for \r\n and recover there.
                 let txt = String::from(&(*String::from_utf8_lossy(&buf[..])));
@@ -46,11 +45,11 @@ impl Decoder for OpCodec {
                 if let Some(offset) = buf[..].windows(2).position(|w| w == b"\r\n") {
                     buf.split_to(offset);
                     self.decode(buf)
-                }else{
+                } else {
                     buf.split_to(len);
                     Ok(None)
                 }
-            },
+            }
         }
     }
 }
@@ -66,7 +65,10 @@ impl Encoder for OpCodec {
         if remaining_bytes < buf_len {
             dst.reserve(buf_len);
         }
-        debug!(" Sending --->\n{}",  String::from(&(*String::from_utf8_lossy(&buf[..]))));
+        debug!(
+            " Sending --->\n{}",
+            String::from(&(*String::from_utf8_lossy(&buf[..])))
+        );
         dst.put(&buf[..]);
         Ok(())
     }

@@ -10,7 +10,6 @@ macro_rules! from_error {
     };
 }
 
-
 /// Error enum for all cases of internal/external errors occuring during client execution
 #[derive(Debug, Fail)]
 pub enum RatsioError {
@@ -65,7 +64,7 @@ pub enum RatsioError {
     SubscriptionReachedMaxMsgs(u32),
 
     #[fail(display = "Stream Closed for {}", _0)]
-    StreamClosed(String)
+    StreamClosed(String),
 }
 
 impl From<io::Error> for RatsioError {
@@ -87,11 +86,15 @@ impl<T> From<::futures::sync::mpsc::SendError<T>> for RatsioError {
 
 impl From<RatsioError> for () {
     fn from(err: RatsioError) -> Self {
-         error!(target:"ratsio", "Rats-io error => {}", err);
+        error!(target:"ratsio", "Rats-io error => {}", err);
     }
 }
 
-from_error!(::std::string::FromUtf8Error, RatsioError, RatsioError::UTF8Error);
+from_error!(
+    ::std::string::FromUtf8Error,
+    RatsioError,
+    RatsioError::UTF8Error
+);
 from_error!(::native_tls::Error, RatsioError, RatsioError::TlsError);
 from_error!(String, RatsioError, RatsioError::GenericError);
 from_error!(::url::ParseError, RatsioError, RatsioError::UrlParseError);

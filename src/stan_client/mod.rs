@@ -1,16 +1,10 @@
 use crate::nats_client::{NatsClient, NatsClientOptions};
-use futures::{
-    Future,
-    sync::mpsc,
-};
 use crate::nuid::NUID;
+use futures::{sync::mpsc, Future};
 use parking_lot::RwLock;
 use std::{
     collections::HashMap,
-    sync::{
-        Arc,
-        atomic::AtomicBool,
-    },
+    sync::{atomic::AtomicBool, Arc},
 };
 mod client;
 mod subscription;
@@ -57,7 +51,11 @@ impl StanOptions {
         options
     }
 
-    pub fn with_options(nats_options: NatsClientOptions, cluster_id: String, client_id: String) -> StanOptions {
+    pub fn with_options(
+        nats_options: NatsClientOptions,
+        cluster_id: String,
+        client_id: String,
+    ) -> StanOptions {
         let mut options = StanOptions::default();
         options.client_id = client_id;
         options.cluster_id = cluster_id;
@@ -239,10 +237,13 @@ pub struct ClientInfo {
     ping_requests: String,
 }
 
-pub struct AsyncHandler(pub Box<Fn(StanMessage) -> Box<Future<Item=(), Error=()> + Send + Sync> + Send + Sync>);
+pub struct AsyncHandler(
+    pub Box<Fn(StanMessage) -> Box<Future<Item = (), Error = ()> + Send + Sync> + Send + Sync>,
+);
 
 pub struct SyncHandler(pub Box<Fn(StanMessage) -> Result<(), ()> + Send + Sync>);
 
-pub type Handler = Fn(StanMessage, Arc<Subscription>, Arc<NatsClient>) -> Result<(), ()> + Send + Sync;
+pub type Handler =
+    Fn(StanMessage, Arc<Subscription>, Arc<NatsClient>) -> Result<(), ()> + Send + Sync;
 
 pub struct SubscriptionHandler(Box<Handler>);

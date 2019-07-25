@@ -1,13 +1,13 @@
-use log::LevelFilter;
 use chrono::Local;
-use std::io::Write;
 use env_logger::Builder;
-
+use log::LevelFilter;
+use std::io::Write;
 
 pub fn setup() {
     let _ = Builder::new()
         .format(|buf, record| {
-            writeln!(buf,
+            writeln!(
+                buf,
                 "{} [{}] - {}",
                 Local::now().format("%Y-%m-%dT%H:%M:%S"),
                 record.level(),

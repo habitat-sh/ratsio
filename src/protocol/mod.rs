@@ -2,7 +2,6 @@
 pub mod protocol;
 pub use self::protocol::*;
 
-
 pub mod parser;
 pub use self::parser::*;
 

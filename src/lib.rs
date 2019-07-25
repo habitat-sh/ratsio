@@ -1,4 +1,4 @@
-#![recursion_limit="256"]
+#![recursion_limit = "256"]
 
 #[macro_use]
 extern crate nom;
@@ -16,12 +16,12 @@ extern crate lazy_static;
 extern crate log;
 
 //use protobuf::{CachedSize, UnknownFields};
-pub mod protocol;
-pub mod ops;
-pub mod error;
 pub mod codec;
-pub mod net;
+pub mod error;
 pub mod nats_client;
-pub mod stan_client;
-pub mod prelude;
+pub mod net;
 pub mod nuid;
+pub mod ops;
+pub mod prelude;
+pub mod protocol;
+pub mod stan_client;
