@@ -23,7 +23,6 @@ impl Decoder for OpCodec {
             Err(NomErr::Incomplete(_)) => Ok(None),
             Ok((remaining, item)) => {
                 let remaining_len = remaining.len();
-                debug!(target: "ratsio", " Op::Item => {:?}", item);
                 buf.split_to(len - remaining_len);
                 Ok(Some(item))
             }
@@ -66,10 +65,6 @@ impl Encoder for OpCodec {
         if remaining_bytes < buf_len {
             dst.reserve(buf_len);
         }
-        debug!(
-            " Sending --->\n{}",
-            String::from(&(*String::from_utf8_lossy(&buf[..])))
-        );
         dst.put(&buf[..]);
         Ok(())
     }

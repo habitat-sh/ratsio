@@ -279,6 +279,9 @@ impl NatsClient {
     ) {
         let control_fut = control_rx
             .take_while(|op| {
+                trace!(target: "ratsio", "<<- {:?}",
+                    String::from_utf8_lossy(&op.clone().into_bytes().unwrap())
+                );
                 match op {
                     Op::CLOSE => Ok(false),
                     _ => Ok(true),

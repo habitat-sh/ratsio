@@ -32,6 +32,9 @@ impl NatsClientSender {
     /// Sends an OP to the server
     pub fn send(&self, op: Op) -> impl Future<Item = (), Error = RatsioError> {
         //let _verbose = self.verbose.clone();
+        trace!(target: "ratsio", "->> {:?}",
+            String::from_utf8_lossy(&op.clone().into_bytes().unwrap())
+        );
         self.tx
             .unbounded_send(op)
             .map_err(|_| RatsioError::InnerBrokenChain)
