@@ -1,13 +1,18 @@
 #[macro_use]
 extern crate log;
 
-use futures::{prelude::*, sync::oneshot};
+use futures::{future, prelude::*, sync::oneshot};
 use ratsio::error::RatsioError;
 use ratsio::nats_client::*;
 use ratsio::ops::*;
-use tokio::runtime::Runtime;
+use ratsio::{
+    nats_client::{NatsClientOptions, NatsClientState},
+    stan_client::{StanClient, StanMessage, StanOptions},
+};
+use tokio::{executor, runtime::Runtime};
 
 use std::sync::Arc;
+use std::{thread, time};
 
 mod common;
 
@@ -126,4 +131,54 @@ fn test_request() {
     let msg = connection_result.unwrap();
     info!(target: "ratsio", "can_request::msg {:#?}", msg);
     assert_eq!(msg.payload, Vec::from(&b"bar"[..]));
+}
+
+#[test]
+fn test_streaming() {
+    common::setup();
+    let (name, verbose, cluster_uri, cluster_id, auth_token) = (
+        "hab_client",
+        true,
+        "192.168.33.199:4223",
+        "event-service",
+        "test",
+    );
+    let nats_options = NatsClientOptions::builder()
+        .cluster_uris(cluster_uri)
+        .auth_token(auth_token.to_string())
+        .verbose(verbose)
+        .ping_max_out(1u16)
+        .build()
+        .unwrap();
+    let stan_options = StanOptions::builder()
+        .nats_options(nats_options)
+        .cluster_id(cluster_id)
+        .client_id(name)
+        .build()
+        .unwrap();
+
+    let publisher = StanClient::from_options(stan_options).then(|result| {
+        match result {
+            Ok(client) => {
+                executor::spawn(future::lazy(move || {
+                    #[allow(unreachable_code)]
+                    future::ok(loop {
+                        let stan_msg =
+                            StanMessage::new("TEST_SUBJECT".into(), Vec::from(&"hello world"[..]));
+                        info!("STATE BEFORE SEND {:?}", client.nats_client.get_state());
+                        if client.nats_client.get_state() == NatsClientState::Connected {
+                            if let Err(e) = client.send(stan_msg).wait() {
+                                error!("Failed to send message {:?}", e);
+                            }
+                        }
+                        thread::sleep(time::Duration::from_secs(2));
+                    })
+                }));
+            }
+            Err(e) => error!("Error upgrading to streaming NATS client: {}", e),
+        }
+        future::ok(())
+    });
+
+    tokio::run(publisher);
 }
