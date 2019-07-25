@@ -12,10 +12,13 @@ use futures::{
 use parking_lot::RwLock;
 use std::time::{Duration, Instant};
 use std::{collections::HashMap, sync::Arc};
+use tokio::prelude::FutureExt;
 use tokio::timer::Delay;
 use tokio::timer::Interval;
 
 use super::*;
+
+const RECONNECT_TIMEOUT: Duration = Duration::from_secs(10);
 
 impl NatsClientMultiplexer {
     fn new(
@@ -273,11 +276,25 @@ impl NatsClient {
 
                     if let Some(handler) = recon_client.stan_reconnect_handler.read().as_ref() {
                         let recon_client = recon_client.clone();
-                        tokio::spawn((handler)(recon_client.clone()).then(move |_| {
-                            *recon_client.state.write() = NatsClientState::Connected;
+                        let stream_conn = connection.clone();
+                        // TODO (DM): Why is this timeout needed? Sometimes this hangs indefinitely
+                        // just triggering another reconnect seems to fix it.
+                        tokio::spawn((handler)(recon_client.clone()).timeout(RECONNECT_TIMEOUT).then(move |result| {
+                            match result {
+                                Ok(_) => {
+                                    info!(target: "ratsio", "Successfully reconnected");
+                                    *recon_client.state.write() = NatsClientState::Connected;
+                                },
+                                Err(e) => {
+                                    error!(target: "ratsio", "Failed to execute stan reconnect handler {:?}", e);
+                                    NatsConnection::trigger_reconnect(stream_conn.clone());
+                                }
+                            }
+
                             Ok(())
                         }));
                     } else {
+                        info!(target: "ratsio", "Successfully reconnected");
                         *recon_client.state.write() = NatsClientState::Connected;
                     }
 
