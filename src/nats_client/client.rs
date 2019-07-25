@@ -242,6 +242,10 @@ impl NatsClient {
                     *recon_client.control_tx.write() = control_tx;
                     *recon_client.state.write() = NatsClientState::Connected;
 
+                    if let Err(e) = NatsClient::connect(&recon_client).wait() {
+                        error!(target: "ratsio", "Failed to send connect op on reconnect '{:?}'", e)
+                    }
+
                     if recon_opts.subscribe_on_reconnect {
                         let subs_sender = recon_client.sender.clone();
                         let subs_fut_list: Vec<_> = recon_subs_map.read().iter().map(|(_, sink)| {
@@ -484,12 +488,22 @@ impl NatsClient {
             .for_sid(sub_cmd.clone())
             .take(1)
             .into_future()
-            .map(move |(surely_message, _)| {
-                let msg = surely_message.unwrap();
-                receiver.read().remove_sid(&sid);
-                msg
-            })
-            .map_err(|(e, _)| e);
+            .then(move |result| match result {
+                Ok((message, _)) => match message {
+                    Some(m) => {
+                        receiver.read().remove_sid(&sid);
+                        Ok(m)
+                    }
+                    None => {
+                        error!("Expected there to be a message");
+                        Err(RatsioError::InnerBrokenChain)
+                    }
+                },
+                Err((e, _)) => {
+                    error!("Failed to take message from stream {:?}", e);
+                    Err(RatsioError::InnerBrokenChain)
+                }
+            });
 
         Either::B(
             self.sender
