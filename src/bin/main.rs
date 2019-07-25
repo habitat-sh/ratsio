@@ -93,7 +93,7 @@ fn main() {
             assert_eq!(stan_msg.payload, Vec::from(&b"hello"[..]));
         }
         Err(_) => {
-            assert!(false);
+            unreachable!();
         }
     };
 

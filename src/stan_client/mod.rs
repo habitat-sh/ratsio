@@ -238,12 +238,14 @@ pub struct ClientInfo {
 }
 
 pub struct AsyncHandler(
-    pub Box<Fn(StanMessage) -> Box<Future<Item = (), Error = ()> + Send + Sync> + Send + Sync>,
+    pub  Box<
+        dyn Fn(StanMessage) -> Box<dyn Future<Item = (), Error = ()> + Send + Sync> + Send + Sync,
+    >,
 );
 
-pub struct SyncHandler(pub Box<Fn(StanMessage) -> Result<(), ()> + Send + Sync>);
+pub struct SyncHandler(pub Box<dyn Fn(StanMessage) -> Result<(), ()> + Send + Sync>);
 
 pub type Handler =
-    Fn(StanMessage, Arc<Subscription>, Arc<NatsClient>) -> Result<(), ()> + Send + Sync;
+    dyn Fn(StanMessage, Arc<Subscription>, Arc<NatsClient>) -> Result<(), ()> + Send + Sync;
 
 pub struct SubscriptionHandler(Box<Handler>);

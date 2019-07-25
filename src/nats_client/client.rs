@@ -2,7 +2,6 @@ use atomic_counter::AtomicCounter;
 use atomic_counter::ConsistentCounter;
 
 use crate::error::RatsioError;
-use crate::net::*;
 use crate::ops::{Message, Op, Publish, Subscribe, UnSubscribe};
 use futures::{
     future::{self, loop_fn, Either, Loop},
@@ -96,7 +95,7 @@ impl NatsClient {
     pub fn add_reconnect_handler(
         &self,
         hid: String,
-        handler: Box<Fn(Arc<NatsClient>) -> () + Send + Sync>,
+        handler: Box<dyn Fn(Arc<NatsClient>) -> () + Send + Sync>,
     ) {
         self.reconnect_handlers.write().insert(hid, handler);
     }

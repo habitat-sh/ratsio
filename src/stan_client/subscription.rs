@@ -15,7 +15,7 @@ use std::sync::{atomic::Ordering, Arc};
 impl Subscription {
     pub(crate) fn start(
         self,
-        stream: Box<Stream<Item = Message, Error = RatsioError> + Send + Sync>,
+        stream: Box<dyn Stream<Item = Message, Error = RatsioError> + Send + Sync>,
     ) -> Arc<Self> {
         let arc_self = Arc::new(self);
         let handler_subscr = arc_self.clone();
@@ -153,7 +153,6 @@ impl Into<SubscriptionHandler> for AsyncHandler {
             move |stan_message: StanMessage,
                   subscr: Arc<Subscription>,
                   nats_client: Arc<NatsClient>| {
-                use futures::Future;
                 let ack_sequence = stan_message.sequence;
                 let ack_subject = stan_message.subject.clone();
                 let manual_acks = subscr.cmd.manual_acks;

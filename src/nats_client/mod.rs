@@ -169,7 +169,7 @@ pub enum NatsClientState {
     Disconnected,
 }
 
-type HandlerMap = HashMap<String, Box<Fn(Arc<NatsClient>) -> () + Send + Sync>>;
+type HandlerMap = HashMap<String, Box<dyn Fn(Arc<NatsClient>) -> () + Send + Sync>>;
 
 /// The NATS Client. What you'll be using mostly. All the async handling is made internally except for
 /// the system messages that are forwarded on the `Stream` that the client implements

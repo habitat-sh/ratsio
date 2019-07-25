@@ -130,7 +130,7 @@ impl From<JsonValue> for ServerInfo {
             JsonValue::Object(obj) => {
                 let connect_urls: Vec<String> = match obj.get("connect_urls") {
                     Some(JsonValue::Array(arr)) => arr
-                        .into_iter()
+                        .iter()
                         .filter_map(|v| match v {
                             JsonValue::String(s) => Some(s.to_owned()),
                             _ => None,

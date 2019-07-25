@@ -350,6 +350,7 @@ impl StanClient {
             })
     }
 
+    #[allow(dead_code)]
     fn ack_message(
         &self,
         ack_inbox: String,

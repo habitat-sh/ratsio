@@ -49,7 +49,7 @@ pub struct NatsConnSinkStream {
     pub(crate) state: Arc<RwLock<(NatsConnectionState, u64)>>,
 
     /// Reconnect trigger
-    pub(crate) reconnect_trigger: Box<Fn() -> () + Sync + Send>,
+    pub(crate) reconnect_trigger: Box<dyn Fn() -> () + Sync + Send>,
 }
 
 impl NatsConnection {

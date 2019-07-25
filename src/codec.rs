@@ -22,8 +22,9 @@ impl Decoder for OpCodec {
         match operation(&buf[..]) {
             Err(NomErr::Incomplete(_)) => Ok(None),
             Ok((remaining, item)) => {
+                let remaining_len = remaining.len();
                 debug!(target: "ratsio", " Op::Item => {:?}", item);
-                buf.split_to(len - remaining.len());
+                buf.split_to(len - remaining_len);
                 Ok(Some(item))
             }
             Err(NomErr::Error(err)) => {
