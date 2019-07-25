@@ -136,7 +136,7 @@ impl StanClient {
         let nats_client = stan_client.nats_client.clone();
         let client_id = stan_client.client_id.clone();
 
-        nats_client.add_reconnect_handler(String::from("_STAN"), Box::new(move |nats_client| {
+        nats_client.set_stan_reconnect_handler(Box::new(move |nats_client| {
             //We may need to disconnect first ......
             let heartbeat_inbox: String = format!("_HB.{}", stan_client.id_generator.write().next());
             let mut close_request = CloseRequest::new();
@@ -202,14 +202,14 @@ impl StanClient {
                     };
                     future::join_all(subs_fut_list).map(|_| ())
                 });
-            tokio::spawn(close_fut.then(|_| {
+            Box::new(close_fut.then(|_| {
                 info!(target: "ratsio", " STAN Reconnecting ...");
                 recon_fut.map_err(|err| {
                     error!(target: "ratsio", "Error reconnecting to STAN: {:?}", err)
                 }).map(|_| {
                     info!(target: "ratsio", " STAN Reconnecting Done, Ready!");
                 })
-            }));
+            }))
         }));
     }
 

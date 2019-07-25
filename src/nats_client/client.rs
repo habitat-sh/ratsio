@@ -104,6 +104,17 @@ impl NatsClient {
         self.reconnect_handlers.write().remove(hid);
     }
 
+    pub fn set_stan_reconnect_handler(
+        &self,
+        handler: Box<
+            dyn (Fn(Arc<NatsClient>) -> Box<dyn Future<Item = (), Error = ()> + Send>)
+                + Send
+                + Sync,
+        >,
+    ) {
+        *self.stan_reconnect_handler.write() = Some(handler);
+    }
+
     pub fn get_state(&self) -> NatsClientState {
         self.state.read().clone()
     }
@@ -179,6 +190,7 @@ impl NatsClient {
                     state: Arc::new(RwLock::new(NatsClientState::Connected)),
                     opts,
                     reconnect_handlers: Arc::new(RwLock::new(HashMap::default())),
+                    stan_reconnect_handler: Arc::new(RwLock::new(None)),
                 });
 
                 let ping_client = client.clone();
@@ -240,7 +252,6 @@ impl NatsClient {
                     *recon_client.sender.write() = sender;
                     *recon_client.receiver.write() = receiver;
                     *recon_client.control_tx.write() = control_tx;
-                    *recon_client.state.write() = NatsClientState::Connected;
 
                     if let Err(e) = NatsClient::connect(&recon_client).wait() {
                         error!(target: "ratsio", "Failed to send connect op on reconnect '{:?}'", e)
@@ -260,11 +271,22 @@ impl NatsClient {
                         tokio::spawn(future::join_all(subs_fut_list).map(|_| ()));
                     }
 
+                    if let Some(handler) = recon_client.stan_reconnect_handler.read().as_ref() {
+                        let recon_client = recon_client.clone();
+                        tokio::spawn((handler)(recon_client.clone()).then(move |_| {
+                            *recon_client.state.write() = NatsClientState::Connected;
+                            Ok(())
+                        }));
+                    } else {
+                        *recon_client.state.write() = NatsClientState::Connected;
+                    }
+
                     let cb_client = recon_client.clone();
                     recon_client.reconnect_handlers.read().iter()
                         .for_each(move |(_, handler)| {
                             (*handler)(cb_client.clone());
                         });
+
                     Ok(())
                 }));
                 future::ok(client)

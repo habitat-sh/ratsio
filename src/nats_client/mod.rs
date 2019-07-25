@@ -173,6 +173,9 @@ pub enum NatsClientState {
 }
 
 type HandlerMap = HashMap<String, Box<dyn Fn(Arc<NatsClient>) -> () + Send + Sync>>;
+type StanReconnectHandler = Option<
+    Box<dyn (Fn(Arc<NatsClient>) -> Box<dyn Future<Item = (), Error = ()> + Send>) + Send + Sync>,
+>;
 
 /// The NATS Client. What you'll be using mostly. All the async handling is made internally except for
 /// the system messages that are forwarded on the `Stream` that the client implements
@@ -195,6 +198,7 @@ pub struct NatsClient {
 
     state: Arc<RwLock<NatsClientState>>,
     reconnect_handlers: Arc<RwLock<HandlerMap>>,
+    stan_reconnect_handler: Arc<RwLock<StanReconnectHandler>>,
 }
 
 impl ::std::fmt::Debug for NatsClient {
